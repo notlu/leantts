@@ -1,0 +1,1503 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Bilingual zero-shot voice cloning audio comparisons for LeanTTS.">
+  <title>LeanTTS: Efficient Full-Stack Bilingual TTS for Zero-Shot Cloning and Voice Customization</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' fill='%23152b46'/%3E%3Cpath d='M17 14v36h30v-7H25V14z' fill='%23f6f2e8'/%3E%3Cpath d='M33 14h14v7H33z' fill='%2394433f'/%3E%3C/svg%3E">
+  <style>
+    :root {
+      --page-bg: #eef1f4;
+      --paper: #ffffff;
+      --ink: #1d2733;
+      --navy: #20384f;
+      --muted: #66717d;
+      --rule: #d8dee5;
+      --rule-strong: #bac5cf;
+      --header-fill: #f5f7f9;
+      --reference-fill: #f0f5f6;
+      --accent: #315d6f;
+      --accent-soft: #e8f0f3;
+      --white: #ffffff;
+      --shadow: 0 12px 32px rgba(31, 45, 61, 0.08);
+      color-scheme: light;
+      font-synthesis: none;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+      scroll-padding-top: 24px;
+    }
+
+    body {
+      margin: 0;
+      color: var(--ink);
+      background: var(--page-bg);
+      border-top: 4px solid var(--accent);
+      font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      font-size: 16px;
+      line-height: 1.6;
+    }
+
+    a {
+      color: var(--accent);
+      text-underline-offset: 3px;
+    }
+
+    .page {
+      width: min(1240px, calc(100% - 40px));
+      margin: 0 auto;
+    }
+
+    .paper-panel,
+    .masthead,
+    .summary-panel,
+    .evaluation-block,
+    .footer {
+      border: 1px solid var(--rule);
+      border-radius: 4px;
+      background: var(--paper);
+      box-shadow: var(--shadow);
+    }
+
+    .masthead {
+      margin-top: 40px;
+      padding: 56px 64px 46px;
+      text-align: center;
+    }
+
+    .kicker {
+      margin: 0 0 14px;
+      color: var(--accent);
+      font-size: 0.74rem;
+      font-weight: 700;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+    }
+
+    h1,
+    h2,
+    h3,
+    .sample-index {
+      font-family: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+    }
+
+    h1 {
+      max-width: 1080px;
+      margin: 0 auto;
+      color: var(--navy);
+      font-size: clamp(2.25rem, 4.5vw, 4rem);
+      font-weight: 500;
+      letter-spacing: -0.025em;
+      line-height: 1.08;
+      text-wrap: balance;
+    }
+
+    .author-block {
+      margin: 24px auto 0;
+      color: var(--muted);
+      line-height: 1.45;
+    }
+
+    .author-name {
+      margin: 0;
+      color: var(--navy);
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: 1.2rem;
+      font-weight: 600;
+    }
+
+    .affiliations {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 4px 22px;
+      margin: 6px 0 0;
+      font-size: 0.92rem;
+    }
+
+    .author-block sup {
+      margin-right: 0.18em;
+      color: var(--accent);
+      font-size: 0.7em;
+      font-weight: 700;
+    }
+
+    .abstract {
+      max-width: 870px;
+      margin: 24px auto 0;
+      color: var(--muted);
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: 1.05rem;
+      line-height: 1.75;
+      text-align: left;
+    }
+
+    .summary-panel {
+      margin-top: 22px;
+      padding: 0 34px;
+    }
+
+    .facts {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      margin: 0;
+    }
+
+    .fact {
+      min-height: 92px;
+      padding: 20px 22px;
+      border-right: 1px solid var(--rule);
+      text-align: center;
+    }
+
+    .fact:last-child {
+      border-right: 0;
+    }
+
+    .fact dt {
+      margin: 0 0 5px;
+      color: var(--muted);
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+
+    .fact dd {
+      margin: 0;
+      color: var(--navy);
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: 1.02rem;
+      line-height: 1.4;
+    }
+
+    .contents {
+      margin-top: 22px;
+      padding: 28px 40px 30px;
+    }
+
+    .contents h2 {
+      font-size: 1.35rem;
+      text-align: left;
+    }
+
+    .contents ol {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px 28px;
+      margin: 14px 0 0;
+      padding-left: 22px;
+      color: var(--muted);
+    }
+
+    .contents li {
+      padding-left: 3px;
+    }
+
+    main {
+      padding: 4px 0 64px;
+    }
+
+    .evaluation-block {
+      margin-top: 24px;
+      padding: 48px 46px 52px;
+    }
+
+    .evaluation-block + .evaluation-block {
+      margin-top: 30px;
+    }
+
+    .evaluation-header {
+      max-width: 900px;
+      margin: 0 auto 18px;
+      padding-bottom: 24px;
+      text-align: center;
+    }
+
+    .source-tags {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 7px;
+      margin-bottom: 14px;
+    }
+
+    .source-tag,
+    .metric-row span {
+      display: inline-flex;
+      align-items: center;
+      min-height: 24px;
+      padding: 3px 9px;
+      border: 1px solid var(--rule-strong);
+      border-radius: 2px;
+      color: var(--muted);
+      background: var(--white);
+      font-size: 0.65rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      line-height: 1.2;
+      text-transform: uppercase;
+    }
+
+    .source-tag.primary,
+    .source-tag.custom {
+      color: var(--white);
+      border-color: var(--accent);
+      background: var(--accent);
+    }
+
+    .evaluation-note {
+      max-width: 780px;
+      margin: 12px auto 0;
+      color: var(--muted);
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: 0.98rem;
+      line-height: 1.7;
+      text-align: left;
+    }
+
+    .language-section {
+      padding-top: 38px;
+    }
+
+    .section-heading {
+      display: flex;
+      align-items: baseline;
+      justify-content: center;
+      gap: 18px;
+      margin-bottom: 0;
+      padding-bottom: 14px;
+      border-bottom: 2px solid var(--navy);
+      text-align: center;
+    }
+
+    h2 {
+      margin: 0;
+      color: var(--navy);
+      font-size: clamp(1.8rem, 3vw, 2.45rem);
+      font-weight: 500;
+      letter-spacing: -0.015em;
+    }
+
+    .section-count {
+      color: var(--muted);
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .comparison-columns {
+      display: grid;
+      grid-template-columns: 64px minmax(240px, 1.25fr) repeat(3, minmax(190px, 1fr));
+      border: 1px solid var(--rule-strong);
+      border-top: 0;
+      background: var(--header-fill);
+      color: var(--muted);
+      font-size: 0.67rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+
+    .comparison-columns span {
+      padding: 11px 12px;
+      border-right: 1px solid var(--rule);
+      text-align: center;
+    }
+
+    .comparison-columns span:nth-child(2) {
+      text-align: left;
+    }
+
+    .comparison-columns span:last-child {
+      border-right: 0;
+    }
+
+    .language-section .sample {
+      display: grid;
+      grid-template-columns: 64px minmax(0, 1fr);
+      gap: 0;
+      padding: 0;
+      border-right: 1px solid var(--rule);
+      border-bottom: 1px solid var(--rule);
+      border-left: 1px solid var(--rule);
+      background: var(--paper);
+    }
+
+    .language-section .sample > div {
+      display: grid;
+      grid-template-columns: minmax(240px, 1.25fr) minmax(0, 3fr);
+      min-width: 0;
+    }
+
+    .sample-index {
+      display: grid;
+      place-items: center;
+      min-width: 0;
+      padding: 16px 8px;
+      border-right: 1px solid var(--rule);
+      color: var(--accent);
+      font-size: 0.94rem;
+      font-variant-numeric: tabular-nums;
+      letter-spacing: 0.02em;
+    }
+
+    .transcript {
+      min-width: 0;
+      margin: 0;
+      color: var(--navy);
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: 0.98rem;
+      line-height: 1.55;
+    }
+
+    .language-section .transcript {
+      padding: 16px 18px;
+    }
+
+
+    .model-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      min-width: 0;
+      border-left: 1px solid var(--rule);
+    }
+
+    .language-section .transcript {
+      grid-column: 1;
+      grid-row: 1 / span 2;
+    }
+
+    .zero-shot-reference {
+      display: grid;
+      grid-column: 2;
+      grid-row: 1;
+      grid-template-columns: minmax(0, 1.45fr) minmax(210px, 1fr);
+      min-width: 0;
+      border-bottom: 1px solid var(--rule);
+      border-left: 1px solid var(--rule);
+      background: var(--reference-fill);
+    }
+
+    .reference-copy,
+    .reference-audio {
+      min-width: 0;
+      padding: 12px 14px;
+    }
+
+    .reference-copy {
+      border-right: 1px solid var(--rule);
+    }
+
+    .reference-copy .model-name {
+      margin-bottom: 5px;
+      color: var(--accent);
+    }
+
+    .reference-text {
+      margin: 0;
+      color: var(--navy);
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: 0.87rem;
+      line-height: 1.45;
+    }
+
+    .reference-audio {
+      display: flex;
+      align-items: center;
+    }
+
+    .model {
+      min-width: 0;
+      padding: 14px;
+      border-right: 1px solid var(--rule);
+    }
+
+    .model:last-child {
+      border-right: 0;
+    }
+
+    .model-name {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 8px;
+      margin: 0 0 9px;
+      color: var(--navy);
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 0.045em;
+      text-transform: uppercase;
+    }
+
+
+
+    .speaker-group {
+      margin-top: 34px;
+      padding: 0;
+      border: 1px solid var(--rule-strong);
+      border-radius: 3px;
+      overflow: hidden;
+    }
+
+    .speaker-heading {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+      padding: 18px 20px;
+      border-bottom: 1px solid var(--rule-strong);
+      background: var(--header-fill);
+    }
+
+
+    .speaker-heading h3 {
+      margin: 0;
+      color: var(--navy);
+      font-size: 1.42rem;
+      font-weight: 500;
+      letter-spacing: -0.01em;
+    }
+
+
+    .custom-samples {
+      background: var(--paper);
+    }
+
+    .custom-row {
+      display: grid;
+      grid-template-columns: minmax(130px, 0.7fr) minmax(260px, 1.5fr) minmax(250px, 1fr);
+      align-items: stretch;
+      gap: 0;
+      padding: 0;
+      border-bottom: 1px solid var(--rule);
+    }
+
+    .custom-row:last-child {
+      border-bottom: 0;
+    }
+
+    .custom-row > .sample-meta,
+    .custom-row > .row-type,
+    .custom-row > .transcript,
+    .custom-row > .custom-model-grid {
+      min-width: 0;
+      margin: 0;
+      padding: 16px;
+      border-right: 1px solid var(--rule);
+    }
+
+    .custom-row > .custom-model-grid {
+      border-right: 0;
+    }
+
+    .sample-meta,
+    .row-type {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 3px;
+      color: var(--muted);
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+
+    .sample-meta span:first-child,
+    .row-type strong {
+      color: var(--accent);
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: 0.92rem;
+      font-weight: 700;
+      letter-spacing: 0;
+      text-transform: none;
+    }
+
+    .row-type span {
+      font-size: 0.64rem;
+      letter-spacing: 0.04em;
+    }
+
+    .custom-row .transcript {
+      display: flex;
+      align-items: center;
+    }
+
+    .metric-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-content: center;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .metric-row span:first-child {
+      color: var(--accent);
+      border-color: rgba(49, 93, 111, 0.35);
+    }
+
+    .custom-model-grid {
+      display: block;
+      max-width: none;
+    }
+
+    .custom-model-grid .model {
+      height: 100%;
+      padding: 0;
+      border: 0;
+    }
+
+    .reference-row {
+      grid-template-columns: minmax(130px, 0.7fr) minmax(0, 2.5fr);
+      background: var(--reference-fill);
+    }
+
+    .reference-row > .custom-model-grid {
+      grid-column: 2 / 3;
+    }
+
+    .reference-row .metric-row span {
+      color: var(--accent);
+      border-color: rgba(49, 93, 111, 0.35);
+      background: var(--accent-soft);
+    }
+
+    .reference-model .model-name {
+      color: var(--accent);
+    }
+
+    audio {
+      display: block;
+      width: 100%;
+      min-width: 0;
+      height: 36px;
+      accent-color: var(--accent);
+    }
+
+    audio:focus-visible {
+      outline: 3px solid rgba(49, 93, 111, 0.28);
+      outline-offset: 3px;
+    }
+
+    .footer {
+      margin-bottom: 42px;
+      padding: 25px 36px;
+      color: var(--muted);
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: 0.9rem;
+    }
+
+    .footer p {
+      max-width: 940px;
+      margin: 0 auto;
+    }
+
+    @media (max-width: 1060px) {
+      .comparison-columns {
+        display: none;
+      }
+
+      .language-section .sample {
+        grid-template-columns: 70px minmax(0, 1fr);
+      }
+
+      .language-section .sample > div {
+        grid-template-columns: 1fr;
+      }
+
+      .language-section .transcript,
+      .zero-shot-reference,
+      .model-grid {
+        grid-column: 1;
+        grid-row: auto;
+      }
+
+      .zero-shot-reference {
+        border-top: 1px solid var(--rule);
+        border-left: 0;
+      }
+
+      .model-grid {
+        border-left: 0;
+      }
+
+      .custom-row {
+        grid-template-columns: minmax(120px, 0.65fr) minmax(220px, 1.3fr) minmax(220px, 1fr);
+      }
+
+      .custom-row.reference-row {
+        grid-template-columns: minmax(120px, 0.65fr) minmax(0, 2.3fr);
+      }
+    }
+
+    @media (max-width: 760px) {
+      .page {
+        width: min(100% - 24px, 1240px);
+      }
+
+      .masthead {
+        margin-top: 18px;
+        padding: 36px 24px 30px;
+      }
+
+      h1 {
+        font-size: clamp(2rem, 10vw, 3rem);
+      }
+
+      .abstract {
+        font-size: 0.98rem;
+      }
+
+      .summary-panel {
+        padding: 0 22px;
+      }
+
+      .contents ol {
+        grid-template-columns: 1fr;
+      }
+
+      .fact {
+        min-height: 0;
+        padding: 14px 0;
+        border-right: 0;
+        border-bottom: 1px solid var(--rule);
+        text-align: left;
+      }
+
+      .fact:last-child {
+        border-bottom: 0;
+      }
+
+      .contents {
+        padding: 24px;
+      }
+
+      .contents ol {
+        gap: 5px;
+      }
+
+      .evaluation-block {
+        padding: 34px 18px 38px;
+      }
+
+      .section-heading {
+        justify-content: space-between;
+        text-align: left;
+      }
+
+      .language-section .sample {
+        display: block;
+      }
+
+      .sample-index {
+        display: block;
+        padding: 11px 15px;
+        border-right: 0;
+        border-bottom: 1px solid var(--rule);
+        background: var(--header-fill);
+      }
+
+      .language-section .sample > div,
+      .model-grid,
+      .custom-row {
+        display: grid;
+        grid-template-columns: 1fr;
+      }
+
+      .custom-row.reference-row {
+        grid-template-columns: 1fr;
+      }
+
+      .zero-shot-reference {
+        grid-template-columns: 1fr;
+      }
+
+      .reference-copy {
+        border-right: 0;
+        border-bottom: 1px solid var(--rule);
+      }
+
+      .model-grid {
+        border-top: 1px solid var(--rule);
+      }
+
+      .model {
+        border-right: 0;
+        border-bottom: 1px solid var(--rule);
+      }
+
+      .model:last-child {
+        border-bottom: 0;
+      }
+
+      .speaker-heading {
+        display: block;
+      }
+
+
+      .custom-row > .sample-meta,
+      .custom-row > .row-type,
+      .custom-row > .transcript,
+        .custom-row > .custom-model-grid {
+        padding: 14px;
+        border-right: 0;
+        border-bottom: 1px solid var(--rule);
+      }
+
+      .custom-row > .custom-model-grid {
+        border-bottom: 0;
+      }
+
+      .reference-row > .custom-model-grid {
+        grid-column: auto;
+      }
+
+      .sample-meta,
+      .row-type {
+        background: rgba(245, 247, 249, 0.7);
+      }
+
+      .footer {
+        padding: 22px 24px;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      html {
+        scroll-behavior: auto;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header class="page masthead">
+    <p class="kicker">Audio Demo · Zero-Shot Cloning &amp; Voice Customization</p>
+    <h1>LeanTTS: Efficient Full-Stack Bilingual TTS for Zero-Shot Cloning and Voice Customization</h1>
+    <div class="author-block" aria-label="Author and affiliations">
+      <p class="author-name">Yuheng Lu et al.<sup>1, 2</sup></p>
+      <p class="affiliations">
+        <span><sup>1</sup>Tianjin University, Tianjin, China</span>
+        <span><sup>2</sup>Didichuxing Co. Ltd., Beijing, China</span>
+      </p>
+    </div>
+  </header>
+
+  <nav class="page contents paper-panel" aria-labelledby="contents-heading">
+    <h2 id="contents-heading">Contents</h2>
+    <ol>
+      <li><a href="#zero-shot-heading">Zero-Shot Voice Cloning</a></li>
+      <li><a href="#custom-heading">Custom Voice</a></li>
+    </ol>
+  </nav>
+
+  <main class="page">
+    <section class="evaluation-block zero-shot" data-evaluation="seedtts-zero-shot" aria-labelledby="zero-shot-heading">
+      <div class="evaluation-header">
+        <div class="source-tags"><span class="source-tag primary">SeedTTS Eval</span><span class="source-tag">Zero-shot</span><span class="source-tag">3-system comparison</span></div>
+        <h2 id="zero-shot-heading">Zero-Shot Voice Cloning</h2>
+        <p class="evaluation-note">Prompt speakers and evaluation texts come from the standard SeedTTS evaluation set. Every sample below is transcribed without error by all three compared systems.</p>
+      </div>
+
+    <section class="language-section" data-language="en" aria-labelledby="english-heading">
+      <div class="section-heading">
+        <h2 id="english-heading">English</h2>
+        <span class="section-count">8 samples</span>
+      </div>
+      <div class="comparison-columns" aria-hidden="true">
+        <span>No.</span><span>Text</span><span>LeanTTS 25M</span><span>LeanTTS 13M</span><span>LeanTTS 13m 4step</span>
+      </div>
+
+<article class="sample" data-kind="zero-shot" data-language="en" data-filename="common_voice_en_493740-common_voice_en_493738.wav">
+        <span class="sample-index">EN–01</span>
+        <div>
+          <p class="transcript">Mrs. Lewis was selected as the new commissioner.</p>
+          <div class="zero-shot-reference" data-kind="zero-shot-reference">
+            <div class="reference-copy">
+              <p class="model-name">Reference Audio</p>
+              <p class="reference-text">The table was adorned with lavish decorations.</p>
+            </div>
+            <div class="reference-audio">
+              <audio controls preload="none" aria-label="Reference audio, English sample 1" src="07_seedtts_references/common_voice_en_493740.wav"></audio>
+            </div>
+          </div>
+          <div class="model-grid">
+            <div class="model"><p class="model-name">LeanTTS 25M</p><audio controls preload="none" aria-label="LeanTTS 25M, English sample 1" src="01_teacher25m/en__common_voice_en_493740-common_voice_en_493738.wav"></audio></div>
+            <div class="model"><p class="model-name">LeanTTS 13M</p><audio controls preload="none" aria-label="LeanTTS 13M, English sample 1" src="02_teacher13m/en__common_voice_en_493740-common_voice_en_493738.wav"></audio></div>
+            <div class="model"><p class="model-name">LeanTTS 13m 4step</p><audio controls preload="none" aria-label="LeanTTS 13m 4step, English sample 1" src="04_fixed4_update10k16k/en__common_voice_en_493740-common_voice_en_493738.wav"></audio></div>
+          </div>
+        </div>
+      </article>
+
+      <article class="sample" data-kind="zero-shot" data-language="en" data-filename="common_voice_en_21534516-common_voice_en_21534520.wav">
+        <span class="sample-index">EN–02</span>
+        <div>
+          <p class="transcript">A number of choirs, bands and sporting clubs are also present.</p>
+          <div class="zero-shot-reference" data-kind="zero-shot-reference">
+            <div class="reference-copy">
+              <p class="model-name">Reference Audio</p>
+              <p class="reference-text">At Jericho Mills, Warren found the river ford unprotected.</p>
+            </div>
+            <div class="reference-audio">
+              <audio controls preload="none" aria-label="Reference audio, English sample 2" src="07_seedtts_references/common_voice_en_21534516.wav"></audio>
+            </div>
+          </div>
+          <div class="model-grid">
+            <div class="model"><p class="model-name">LeanTTS 25M</p><audio controls preload="none" aria-label="LeanTTS 25M, English sample 2" src="01_teacher25m/en__common_voice_en_21534516-common_voice_en_21534520.wav"></audio></div>
+            <div class="model"><p class="model-name">LeanTTS 13M</p><audio controls preload="none" aria-label="LeanTTS 13M, English sample 2" src="02_teacher13m/en__common_voice_en_21534516-common_voice_en_21534520.wav"></audio></div>
+            <div class="model"><p class="model-name">LeanTTS 13m 4step</p><audio controls preload="none" aria-label="LeanTTS 13m 4step, English sample 2" src="04_fixed4_update10k16k/en__common_voice_en_21534516-common_voice_en_21534520.wav"></audio></div>
+          </div>
+        </div>
+      </article>
+
+      <article class="sample" data-kind="zero-shot" data-language="en" data-filename="common_voice_en_18200641-common_voice_en_18200790.wav">
+        <span class="sample-index">EN–03</span>
+        <div>
+          <p class="transcript">After I had finished the first batch of papers, I was getting into the workflow.</p>
+          <div class="zero-shot-reference" data-kind="zero-shot-reference">
+            <div class="reference-copy">
+              <p class="model-name">Reference Audio</p>
+              <p class="reference-text">We can describe the object's movement with a differential equation of second order.</p>
+            </div>
+            <div class="reference-audio">
+              <audio controls preload="none" aria-label="Reference audio, English sample 3" src="07_seedtts_references/common_voice_en_18200641.wav"></audio>
+            </div>
+          </div>
+          <div class="model-grid">
+            <div class="model"><p class="model-name">LeanTTS 25M</p><audio controls preload="none" aria-label="LeanTTS 25M, English sample 3" src="01_teacher25m/en__common_voice_en_18200641-common_voice_en_18200790.wav"></audio></div>
+            <div class="model"><p class="model-name">LeanTTS 13M</p><audio controls preload="none" aria-label="LeanTTS 13M, English sample 3" src="02_teacher13m/en__common_voice_en_18200641-common_voice_en_18200790.wav"></audio></div>
+            <div class="model"><p class="model-name">LeanTTS 13m 4step</p><audio controls preload="none" aria-label="LeanTTS 13m 4step, English sample 3" src="04_fixed4_update10k16k/en__common_voice_en_18200641-common_voice_en_18200790.wav"></audio></div>
+          </div>
+        </div>
+      </article>
+
+      <article class="sample" data-kind="zero-shot" data-language="en" data-filename="common_voice_en_23963776-common_voice_en_23963795.wav">
+        <span class="sample-index">EN–04</span>
+        <div>
+          <p class="transcript">The city is the county seat of Spencer County.</p>
+          <div class="zero-shot-reference" data-kind="zero-shot-reference">
+            <div class="reference-copy">
+              <p class="model-name">Reference Audio</p>
+              <p class="reference-text">Disconcerted, Morris would not publish again for a further eight years.</p>
+            </div>
+            <div class="reference-audio">
+              <audio controls preload="none" aria-label="Reference audio, English sample 4" src="07_seedtts_references/common_voice_en_23963776.wav"></audio>
+            </div>
+          </div>
+          <div class="model-grid">
+            <div class="model"><p class="model-name">LeanTTS 25M</p><audio controls preload="none" aria-label="LeanTTS 25M, English sample 4" src="01_teacher25m/en__common_voice_en_23963776-common_voice_en_23963795.wav"></audio></div>
+            <div class="model"><p class="model-name">LeanTTS 13M</p><audio controls preload="none" aria-label="LeanTTS 13M, English sample 4" src="02_teacher13m/en__common_voice_en_23963776-common_voice_en_23963795.wav"></audio></div>
+            <div class="model"><p class="model-name">LeanTTS 13m 4step</p><audio controls preload="none" aria-label="LeanTTS 13m 4step, English sample 4" src="04_fixed4_update10k16k/en__common_voice_en_23963776-common_voice_en_23963795.wav"></audio></div>
+          </div>
+        </div>
+      </article>
+
+      <article class="sample" data-kind="zero-shot" data-language="en" data-filename="common_voice_en_24989570-common_voice_en_24989571.wav">
+        <span class="sample-index">EN–05</span>
+        <div>
+          <p class="transcript">However, this time it was directly headed by the Russian ambassador.</p>
+          <div class="zero-shot-reference" data-kind="zero-shot-reference">
+            <div class="reference-copy">
+              <p class="model-name">Reference Audio</p>
+              <p class="reference-text">York is served by the Toronto Transit Commission's buses and subway system.</p>
+            </div>
+            <div class="reference-audio">
+              <audio controls preload="none" aria-label="Reference audio, English sample 5" src="07_seedtts_references/common_voice_en_24989570.wav"></audio>
+            </div>
+          </div>
+          <div class="model-grid">
+            <div class="model"><p class="model-name">LeanTTS 25M</p><audio controls preload="none" aria-label="LeanTTS 25M, English sample 5" src="01_teacher25m/en__common_voice_en_24989570-common_voice_en_24989571.wav"></audio></div>
+            <div class="model"><p class="model-name">LeanTTS 13M</p><audio controls preload="none" aria-label="LeanTTS 13M, English sample 5" src="02_teacher13m/en__common_voice_en_24989570-common_voice_en_24989571.wav"></audio></div>
+            <div class="model"><p class="model-name">LeanTTS 13m 4step</p><audio controls preload="none" aria-label="LeanTTS 13m 4step, English sample 5" src="04_fixed4_update10k16k/en__common_voice_en_24989570-common_voice_en_24989571.wav"></audio></div>
+          </div>
+        </div>
+      </article>
+
+      <article class="sample" data-kind="zero-shot" data-language="en" data-filename="common_voice_en_21777264-common_voice_en_21777262.wav">
+        <span class="sample-index">EN–06</span>
+        <div>
+          <p class="transcript">Its county seats are Manchester and Nashua.</p>
+          <div class="zero-shot-reference" data-kind="zero-shot-reference">
+            <div class="reference-copy">
+              <p class="model-name">Reference Audio</p>
+              <p class="reference-text">The browser's main features are customization and tab functions.</p>
+            </div>
+            <div class="reference-audio">
+              <audio controls preload="none" aria-label="Reference audio, English sample 6" src="07_seedtts_references/common_voice_en_21777264.wav"></audio>
+            </div>
+          </div>
+          <div class="model-grid">
+            <div class="model"><p class="model-name">LeanTTS 25M</p><audio controls preload="none" aria-label="LeanTTS 25M, English sample 6" src="01_teacher25m/en__common_voice_en_21777264-common_voice_en_21777262.wav"></audio></div>
+            <div class="model"><p class="model-name">LeanTTS 13M</p><audio controls preload="none" aria-label="LeanTTS 13M, English sample 6" src="02_teacher13m/en__common_voice_en_21777264-common_voice_en_21777262.wav"></audio></div>
+            <div class="model"><p class="model-name">LeanTTS 13m 4step</p><audio controls preload="none" aria-label="LeanTTS 13m 4step, English sample 6" src="04_fixed4_update10k16k/en__common_voice_en_21777264-common_voice_en_21777262.wav"></audio></div>
+          </div>
+        </div>
+      </article>
+
+      <article class="sample" data-kind="zero-shot" data-language="en" data-filename="common_voice_en_21869715-common_voice_en_21869717.wav">
+        <span class="sample-index">EN–07</span>
+        <div>
+          <p class="transcript">Compressed Natural Gas is a domestic energy produced in Western parts of India.</p>
+          <div class="zero-shot-reference" data-kind="zero-shot-reference">
+            <div class="reference-copy">
+              <p class="model-name">Reference Audio</p>
+              <p class="reference-text">A remake is a motion picture based on a film produced earlier.</p>
+            </div>
+            <div class="reference-audio">
+              <audio controls preload="none" aria-label="Reference audio, English sample 7" src="07_seedtts_references/common_voice_en_21869715.wav"></audio>
+            </div>
+          </div>
+          <div class="model-grid">
+            <div class="model"><p class="model-name">LeanTTS 25M</p><audio controls preload="none" aria-label="LeanTTS 25M, English sample 7" src="01_teacher25m/en__common_voice_en_21869715-common_voice_en_21869717.wav"></audio></div>
+            <div class="model"><p class="model-name">LeanTTS 13M</p><audio controls preload="none" aria-label="LeanTTS 13M, English sample 7" src="02_teacher13m/en__common_voice_en_21869715-common_voice_en_21869717.wav"></audio></div>
+            <div class="model"><p class="model-name">LeanTTS 13m 4step</p><audio controls preload="none" aria-label="LeanTTS 13m 4step, English sample 7" src="04_fixed4_update10k16k/en__common_voice_en_21869715-common_voice_en_21869717.wav"></audio></div>
+          </div>
+        </div>
+      </article>
+
+      <article class="sample" data-kind="zero-shot" data-language="en" data-filename="common_voice_en_20262152-common_voice_en_20262155.wav">
+        <span class="sample-index">EN–08</span>
+        <div>
+          <p class="transcript">This form of legislation would not receive royal assent like Acts of Parliament do.</p>
+          <div class="zero-shot-reference" data-kind="zero-shot-reference">
+            <div class="reference-copy">
+              <p class="model-name">Reference Audio</p>
+              <p class="reference-text">This implied accommodation close to the armed forces' Central War Room.</p>
+            </div>
+            <div class="reference-audio">
+              <audio controls preload="none" aria-label="Reference audio, English sample 8" src="07_seedtts_references/common_voice_en_20262152.wav"></audio>
+            </div>
+          </div>
+          <div class="model-grid">
+            <div class="model"><p class="model-name">LeanTTS 25M</p><audio controls preload="none" aria-label="LeanTTS 25M, English sample 8" src="01_teacher25m/en__common_voice_en_20262152-common_voice_en_20262155.wav"></audio></div>
+            <div class="model"><p class="model-name">LeanTTS 13M</p><audio controls preload="none" aria-label="LeanTTS 13M, English sample 8" src="02_teacher13m/en__common_voice_en_20262152-common_voice_en_20262155.wav"></audio></div>
+            <div class="model"><p class="model-name">LeanTTS 13m 4step</p><audio controls preload="none" aria-label="LeanTTS 13m 4step, English sample 8" src="04_fixed4_update10k16k/en__common_voice_en_20262152-common_voice_en_20262155.wav"></audio></div>
+          </div>
+        </div>
+      </article>
+
+    </section>
+
+    <section class="language-section" data-language="zh" aria-labelledby="chinese-heading" lang="zh-CN">
+      <div class="section-heading">
+        <h2 id="chinese-heading">Chinese</h2>
+        <span class="section-count">8 samples</span>
+      </div>
+      <div class="comparison-columns" aria-hidden="true">
+        <span>No.</span><span>Text</span><span>LeanTTS 25M</span><span>LeanTTS 13M</span><span>LeanTTS 13m 4step</span>
+      </div>
+
+      <article class="sample" data-kind="zero-shot" data-language="zh" data-filename="00004552-00000044.wav">
+        <span class="sample-index">ZH–01</span>
+        <div>
+          <p class="transcript">他们把车停在黑车旁，开始通过喇叭驱赶黑车。</p>
+          <div class="zero-shot-reference" data-kind="zero-shot-reference">
+            <div class="reference-copy">
+              <p class="model-name">Reference Audio</p>
+              <p class="reference-text">比如将白萝卜剥皮油炸做成丸子，当荤菜吃。</p>
+            </div>
+            <div class="reference-audio">
+              <audio controls preload="none" aria-label="Reference audio, Chinese sample 1" src="07_seedtts_references/00004552-00000102.wav"></audio>
+            </div>
+          </div>
+          <div class="model-grid">
+            <div class="model"><p class="model-name">LeanTTS 25M</p><audio controls preload="none" aria-label="LeanTTS 25M, Chinese sample 1" src="01_teacher25m/zh__00004552-00000044.wav"></audio></div>
+            <div class="model"><p class="model-name">LeanTTS 13M</p><audio controls preload="none" aria-label="LeanTTS 13M, Chinese sample 1" src="02_teacher13m/zh__00004552-00000044.wav"></audio></div>
+            <div class="model"><p class="model-name">LeanTTS 13m 4step</p><audio controls preload="none" aria-label="LeanTTS 13m 4step, Chinese sample 1" src="04_fixed4_update10k16k/zh__00004552-00000044.wav"></audio></div>
+          </div>
+        </div>
+      </article>
+
+      <article class="sample" data-kind="zero-shot" data-language="zh" data-filename="10002481-00000044.wav">
+        <span class="sample-index">ZH–02</span>
+        <div>
+          <p class="transcript">北京在出行规模，城市影响力方面表现优异。</p>
+          <div class="zero-shot-reference" data-kind="zero-shot-reference">
+            <div class="reference-copy">
+              <p class="model-name">Reference Audio</p>
+              <p class="reference-text">真正落地成为产品服务进入每个人的生活。</p>
+            </div>
+            <div class="reference-audio">
+              <audio controls preload="none" aria-label="Reference audio, Chinese sample 2" src="07_seedtts_references/10002481-00000010.wav"></audio>
+            </div>
+          </div>
+          <div class="model-grid">
+            <div class="model"><p class="model-name">LeanTTS 25M</p><audio controls preload="none" aria-label="LeanTTS 25M, Chinese sample 2" src="01_teacher25m/zh__10002481-00000044.wav"></audio></div>
+            <div class="model"><p class="model-name">LeanTTS 13M</p><audio controls preload="none" aria-label="LeanTTS 13M, Chinese sample 2" src="02_teacher13m/zh__10002481-00000044.wav"></audio></div>
+            <div class="model"><p class="model-name">LeanTTS 13m 4step</p><audio controls preload="none" aria-label="LeanTTS 13m 4step, Chinese sample 2" src="04_fixed4_update10k16k/zh__10002481-00000044.wav"></audio></div>
+          </div>
+        </div>
+      </article>
+
+      <article class="sample" data-kind="zero-shot" data-language="zh" data-filename="00005275-00000071.wav">
+        <span class="sample-index">ZH–03</span>
+        <div>
+          <p class="transcript">那一共有七个故事，因为每个星期有七天。</p>
+          <div class="zero-shot-reference" data-kind="zero-shot-reference">
+            <div class="reference-copy">
+              <p class="model-name">Reference Audio</p>
+              <p class="reference-text">所以，我猜他们被雪崩埋葬的可能性极小。</p>
+            </div>
+            <div class="reference-audio">
+              <audio controls preload="none" aria-label="Reference audio, Chinese sample 3" src="07_seedtts_references/00005275-00000070.wav"></audio>
+            </div>
+          </div>
+          <div class="model-grid">
+            <div class="model"><p class="model-name">LeanTTS 25M</p><audio controls preload="none" aria-label="LeanTTS 25M, Chinese sample 3" src="01_teacher25m/zh__00005275-00000071.wav"></audio></div>
+            <div class="model"><p class="model-name">LeanTTS 13M</p><audio controls preload="none" aria-label="LeanTTS 13M, Chinese sample 3" src="02_teacher13m/zh__00005275-00000071.wav"></audio></div>
+            <div class="model"><p class="model-name">LeanTTS 13m 4step</p><audio controls preload="none" aria-label="LeanTTS 13m 4step, Chinese sample 3" src="04_fixed4_update10k16k/zh__00005275-00000071.wav"></audio></div>
+          </div>
+        </div>
+      </article>
+
+      <article class="sample" data-kind="zero-shot" data-language="zh" data-filename="00004540-00000030.wav">
+        <span class="sample-index">ZH–04</span>
+        <div>
+          <p class="transcript">每天早晨有一个老仆人，来为他打扫房间和跑腿。</p>
+          <div class="zero-shot-reference" data-kind="zero-shot-reference">
+            <div class="reference-copy">
+              <p class="model-name">Reference Audio</p>
+              <p class="reference-text">我希望艾克尔伯格将军，接受我的新军刀。</p>
+            </div>
+            <div class="reference-audio">
+              <audio controls preload="none" aria-label="Reference audio, Chinese sample 4" src="07_seedtts_references/00004540-00000087.wav"></audio>
+            </div>
+          </div>
+          <div class="model-grid">
+            <div class="model"><p class="model-name">LeanTTS 25M</p><audio controls preload="none" aria-label="LeanTTS 25M, Chinese sample 4" src="01_teacher25m/zh__00004540-00000030.wav"></audio></div>
+            <div class="model"><p class="model-name">LeanTTS 13M</p><audio controls preload="none" aria-label="LeanTTS 13M, Chinese sample 4" src="02_teacher13m/zh__00004540-00000030.wav"></audio></div>
+            <div class="model"><p class="model-name">LeanTTS 13m 4step</p><audio controls preload="none" aria-label="LeanTTS 13m 4step, Chinese sample 4" src="04_fixed4_update10k16k/zh__00004540-00000030.wav"></audio></div>
+          </div>
+        </div>
+      </article>
+
+      <article class="sample" data-kind="zero-shot" data-language="zh" data-filename="00004508-00000064.wav">
+        <span class="sample-index">ZH–05</span>
+        <div>
+          <p class="transcript">是女性们既瘦身又美容养颜的好食材。</p>
+          <div class="zero-shot-reference" data-kind="zero-shot-reference">
+            <div class="reference-copy">
+              <p class="model-name">Reference Audio</p>
+              <p class="reference-text">火精灵又出现了，猴腿，帕克挠挠头。</p>
+            </div>
+            <div class="reference-audio">
+              <audio controls preload="none" aria-label="Reference audio, Chinese sample 5" src="07_seedtts_references/00004508-00000066.wav"></audio>
+            </div>
+          </div>
+          <div class="model-grid">
+            <div class="model"><p class="model-name">LeanTTS 25M</p><audio controls preload="none" aria-label="LeanTTS 25M, Chinese sample 5" src="01_teacher25m/zh__00004508-00000064.wav"></audio></div>
+            <div class="model"><p class="model-name">LeanTTS 13M</p><audio controls preload="none" aria-label="LeanTTS 13M, Chinese sample 5" src="02_teacher13m/zh__00004508-00000064.wav"></audio></div>
+            <div class="model"><p class="model-name">LeanTTS 13m 4step</p><audio controls preload="none" aria-label="LeanTTS 13m 4step, Chinese sample 5" src="04_fixed4_update10k16k/zh__00004508-00000064.wav"></audio></div>
+          </div>
+        </div>
+      </article>
+
+      <article class="sample" data-kind="zero-shot" data-language="zh" data-filename="00005062-00000010.wav">
+        <span class="sample-index">ZH–07</span>
+        <div>
+          <p class="transcript">哎，这些情况在北京这样的大都市，是无法避免的。</p>
+          <div class="zero-shot-reference" data-kind="zero-shot-reference">
+            <div class="reference-copy">
+              <p class="model-name">Reference Audio</p>
+              <p class="reference-text">关于不少万达广场的注册资本金更改。</p>
+            </div>
+            <div class="reference-audio">
+              <audio controls preload="none" aria-label="Reference audio, Chinese sample 7" src="07_seedtts_references/00005062-00000085.wav"></audio>
+            </div>
+          </div>
+          <div class="model-grid">
+            <div class="model"><p class="model-name">LeanTTS 25M</p><audio controls preload="none" aria-label="LeanTTS 25M, Chinese sample 7" src="01_teacher25m/zh__00005062-00000010.wav"></audio></div>
+            <div class="model"><p class="model-name">LeanTTS 13M</p><audio controls preload="none" aria-label="LeanTTS 13M, Chinese sample 7" src="02_teacher13m/zh__00005062-00000010.wav"></audio></div>
+            <div class="model"><p class="model-name">LeanTTS 13m 4step</p><audio controls preload="none" aria-label="LeanTTS 13m 4step, Chinese sample 7" src="04_fixed4_update10k16k/zh__00005062-00000010.wav"></audio></div>
+          </div>
+        </div>
+      </article>
+
+      <article class="sample" data-kind="zero-shot" data-language="zh" data-filename="00005304-00000066.wav">
+        <span class="sample-index">ZH–09</span>
+        <div>
+          <p class="transcript">事实上，不是淘宝，阿里巴巴太便宜了，而是商场贵了。</p>
+          <div class="zero-shot-reference" data-kind="zero-shot-reference">
+            <div class="reference-copy">
+              <p class="model-name">Reference Audio</p>
+              <p class="reference-text">然而我们或许依旧能够通过，诸多凤毛麟角的线索。</p>
+            </div>
+            <div class="reference-audio">
+              <audio controls preload="none" aria-label="Reference audio, Chinese sample 9" src="07_seedtts_references/00005304-00000037.wav"></audio>
+            </div>
+          </div>
+          <div class="model-grid">
+            <div class="model"><p class="model-name">LeanTTS 25M</p><audio controls preload="none" aria-label="LeanTTS 25M, Chinese sample 9" src="01_teacher25m/zh__00005304-00000066.wav"></audio></div>
+            <div class="model"><p class="model-name">LeanTTS 13M</p><audio controls preload="none" aria-label="LeanTTS 13M, Chinese sample 9" src="02_teacher13m/zh__00005304-00000066.wav"></audio></div>
+            <div class="model"><p class="model-name">LeanTTS 13m 4step</p><audio controls preload="none" aria-label="LeanTTS 13m 4step, Chinese sample 9" src="04_fixed4_update10k16k/zh__00005304-00000066.wav"></audio></div>
+          </div>
+        </div>
+      </article>
+
+      <article class="sample" data-kind="zero-shot" data-language="zh" data-filename="00005256-00000112.wav">
+        <span class="sample-index">ZH–10</span>
+        <div>
+          <p class="transcript">可以清除因吃肉类，而积聚在下身的脂肪。</p>
+          <div class="zero-shot-reference" data-kind="zero-shot-reference">
+            <div class="reference-copy">
+              <p class="model-name">Reference Audio</p>
+              <p class="reference-text">拉布多掏出一瓶药水叫花朵朵喝下。</p>
+            </div>
+            <div class="reference-audio">
+              <audio controls preload="none" aria-label="Reference audio, Chinese sample 10" src="07_seedtts_references/00005256-00000046.wav"></audio>
+            </div>
+          </div>
+          <div class="model-grid">
+            <div class="model"><p class="model-name">LeanTTS 25M</p><audio controls preload="none" aria-label="LeanTTS 25M, Chinese sample 10" src="01_teacher25m/zh__00005256-00000112.wav"></audio></div>
+            <div class="model"><p class="model-name">LeanTTS 13M</p><audio controls preload="none" aria-label="LeanTTS 13M, Chinese sample 10" src="02_teacher13m/zh__00005256-00000112.wav"></audio></div>
+            <div class="model"><p class="model-name">LeanTTS 13m 4step</p><audio controls preload="none" aria-label="LeanTTS 13m 4step, Chinese sample 10" src="04_fixed4_update10k16k/zh__00005256-00000112.wav"></audio></div>
+          </div>
+        </div>
+      </article>
+    </section>
+    </section>
+
+    <section class="evaluation-block custom-voice" data-evaluation="custom-voice" aria-labelledby="custom-heading">
+      <header class="evaluation-header">
+        <h2 id="custom-heading">Custom Voice</h2>
+      </header>
+      <section class="speaker-group" data-speaker="Speaker 1" aria-labelledby="speaker-1">
+        <div class="speaker-heading">
+          <h3 id="speaker-1">Speaker 1</h3>
+        </div>
+        <div class="custom-samples">
+          <article class="sample custom-row reference-row" data-kind="reference" data-language="zh" data-speaker="Speaker 1" data-wer="" data-cer="" data-utmos="" data-filename="cwmk__reference.wav">
+            <div class="row-type"><strong>Reference Audio</strong></div>
+            <div class="custom-model-grid">
+              <div class="model reference-model"><audio controls preload="none" aria-label="Speaker 1, reference audio" src="06_custom_voice/cwmk__reference.wav"></audio></div>
+            </div>
+          </article>
+          <article class="sample custom-sample custom-row" data-kind="custom" data-language="en" data-speaker="Speaker 1" data-wer="" data-cer="" data-utmos="" data-filename="cwmk__en_04.wav">
+            <div class="sample-meta"><span>CV–01</span><span>English</span></div>
+            <p class="transcript">Go to the park, and play with the dog.</p>
+            <div class="custom-model-grid">
+              <div class="model"><p class="model-name">LeanTTS 13m 4step</p><audio controls preload="none" aria-label="Speaker 1, English Custom Voice sample 1" src="06_custom_voice/cwmk__en_04.wav"></audio></div>
+            </div>
+          </article>
+          <article class="sample custom-sample custom-row" data-kind="custom" data-language="en" data-speaker="Speaker 1" data-wer="" data-cer="" data-utmos="" data-filename="cwmk__en_02.wav">
+            <div class="sample-meta"><span>CV–02</span><span>English</span></div>
+            <p class="transcript">I love you, I hate you, I am happy, I am sad, I am angry, I am surprised, I am disappointed, I am excited, I am nervous.</p>
+            <div class="custom-model-grid">
+              <div class="model"><p class="model-name">LeanTTS 13m 4step</p><audio controls preload="none" aria-label="Speaker 1, English Custom Voice sample 2" src="06_custom_voice/cwmk__en_02.wav"></audio></div>
+            </div>
+          </article>
+          <article class="sample custom-sample custom-row" data-kind="custom" data-language="zh" data-speaker="Speaker 1" data-wer="" data-cer="" data-utmos="" data-filename="spk360__0766.wav">
+            <div class="sample-meta"><span>CV–03</span><span>Chinese</span></div>
+            <p class="transcript">在这充满神秘色彩的地方，经历过多次危险而勇敢的冒险。</p>
+            <div class="custom-model-grid">
+              <div class="model"><p class="model-name">LeanTTS 13m 4step</p><audio controls preload="none" aria-label="Speaker 1, Chinese Custom Voice sample 3" src="06_custom_voice/spk360__0766.wav"></audio></div>
+            </div>
+          </article>
+          <article class="sample custom-sample custom-row" data-kind="custom" data-language="zh" data-speaker="Speaker 1" data-wer="" data-cer="" data-utmos="" data-filename="spk360__0886.wav">
+            <div class="sample-meta"><span>CV–04</span><span>Chinese</span></div>
+            <p class="transcript">学习哈佛毕业生的周末自我投资法。</p>
+            <div class="custom-model-grid">
+              <div class="model"><p class="model-name">LeanTTS 13m 4step</p><audio controls preload="none" aria-label="Speaker 1, Chinese Custom Voice sample 4" src="06_custom_voice/spk360__0886.wav"></audio></div>
+            </div>
+          </article>
+        </div>
+      </section>
+      <section class="speaker-group" data-speaker="Speaker 2" aria-labelledby="speaker-2">
+        <div class="speaker-heading">
+          <h3 id="speaker-2">Speaker 2</h3>
+        </div>
+        <div class="custom-samples">
+          <article class="sample custom-row reference-row" data-kind="reference" data-language="zh" data-speaker="Speaker 2" data-wer="" data-cer="" data-utmos="" data-filename="jsbb__reference.wav">
+            <div class="row-type"><strong>Reference Audio</strong></div>
+            <div class="custom-model-grid">
+              <div class="model reference-model"><audio controls preload="none" aria-label="Speaker 2, reference audio" src="06_custom_voice/jsbb__reference.wav"></audio></div>
+            </div>
+          </article>
+          <article class="sample custom-sample custom-row" data-kind="custom" data-language="en" data-speaker="Speaker 2" data-wer="" data-cer="" data-utmos="" data-filename="jsbb__en_04.wav">
+            <div class="sample-meta"><span>CV–05</span><span>English</span></div>
+            <p class="transcript">Go to the park, and play with the dog.</p>
+            <div class="custom-model-grid">
+              <div class="model"><p class="model-name">LeanTTS 13m 4step</p><audio controls preload="none" aria-label="Speaker 2, English Custom Voice sample 5" src="06_custom_voice/jsbb__en_04.wav"></audio></div>
+            </div>
+          </article>
+          <article class="sample custom-sample custom-row" data-kind="custom" data-language="en" data-speaker="Speaker 2" data-wer="" data-cer="" data-utmos="" data-filename="jsbb__en_02.wav">
+            <div class="sample-meta"><span>CV–06</span><span>English</span></div>
+            <p class="transcript">I love you, I hate you, I am happy, I am sad, I am angry, I am surprised, I am disappointed, I am excited, I am nervous.</p>
+            <div class="custom-model-grid">
+              <div class="model"><p class="model-name">LeanTTS 13m 4step</p><audio controls preload="none" aria-label="Speaker 2, English Custom Voice sample 6" src="06_custom_voice/jsbb__en_02.wav"></audio></div>
+            </div>
+          </article>
+          <article class="sample custom-sample custom-row" data-kind="custom" data-language="zh" data-speaker="Speaker 2" data-wer="" data-cer="" data-utmos="" data-filename="spk361__0766.wav">
+            <div class="sample-meta"><span>CV–07</span><span>Chinese</span></div>
+            <p class="transcript">在这充满神秘色彩的地方，经历过多次危险而勇敢的冒险。</p>
+            <div class="custom-model-grid">
+              <div class="model"><p class="model-name">LeanTTS 13m 4step</p><audio controls preload="none" aria-label="Speaker 2, Chinese Custom Voice sample 7" src="06_custom_voice/spk361__0766.wav"></audio></div>
+            </div>
+          </article>
+          <article class="sample custom-sample custom-row" data-kind="custom" data-language="zh" data-speaker="Speaker 2" data-wer="" data-cer="" data-utmos="" data-filename="spk361__0886.wav">
+            <div class="sample-meta"><span>CV–08</span><span>Chinese</span></div>
+            <p class="transcript">学习哈佛毕业生的周末自我投资法。</p>
+            <div class="custom-model-grid">
+              <div class="model"><p class="model-name">LeanTTS 13m 4step</p><audio controls preload="none" aria-label="Speaker 2, Chinese Custom Voice sample 8" src="06_custom_voice/spk361__0886.wav"></audio></div>
+            </div>
+          </article>
+        </div>
+      </section>
+      <section class="speaker-group" data-speaker="Speaker 3" aria-labelledby="speaker-3">
+        <div class="speaker-heading">
+          <h3 id="speaker-3">Speaker 3</h3>
+        </div>
+        <div class="custom-samples">
+          <article class="sample custom-row reference-row" data-kind="reference" data-language="zh" data-speaker="Speaker 3" data-wer="" data-cer="" data-utmos="" data-filename="xnhf__reference.wav">
+            <div class="row-type"><strong>Reference Audio</strong></div>
+            <div class="custom-model-grid">
+              <div class="model reference-model"><audio controls preload="none" aria-label="Speaker 3, reference audio" src="06_custom_voice/xnhf__reference.wav"></audio></div>
+            </div>
+          </article>
+          <article class="sample custom-sample custom-row" data-kind="custom" data-language="en" data-speaker="Speaker 3" data-wer="" data-cer="" data-utmos="" data-filename="xnhf__en_04.wav">
+            <div class="sample-meta"><span>CV–09</span><span>English</span></div>
+            <p class="transcript">Go to the park, and play with the dog.</p>
+            <div class="custom-model-grid">
+              <div class="model"><p class="model-name">LeanTTS 13m 4step</p><audio controls preload="none" aria-label="Speaker 3, English Custom Voice sample 9" src="06_custom_voice/xnhf__en_04.wav"></audio></div>
+            </div>
+          </article>
+          <article class="sample custom-sample custom-row" data-kind="custom" data-language="en" data-speaker="Speaker 3" data-wer="" data-cer="" data-utmos="" data-filename="xnhf__en_02.wav">
+            <div class="sample-meta"><span>CV–10</span><span>English</span></div>
+            <p class="transcript">I love you, I hate you, I am happy, I am sad, I am angry, I am surprised, I am disappointed, I am excited, I am nervous.</p>
+            <div class="custom-model-grid">
+              <div class="model"><p class="model-name">LeanTTS 13m 4step</p><audio controls preload="none" aria-label="Speaker 3, English Custom Voice sample 10" src="06_custom_voice/xnhf__en_02.wav"></audio></div>
+            </div>
+          </article>
+          <article class="sample custom-sample custom-row" data-kind="custom" data-language="zh" data-speaker="Speaker 3" data-wer="" data-cer="" data-utmos="" data-filename="spk362__0766.wav">
+            <div class="sample-meta"><span>CV–11</span><span>Chinese</span></div>
+            <p class="transcript">在这充满神秘色彩的地方，经历过多次危险而勇敢的冒险。</p>
+            <div class="custom-model-grid">
+              <div class="model"><p class="model-name">LeanTTS 13m 4step</p><audio controls preload="none" aria-label="Speaker 3, Chinese Custom Voice sample 11" src="06_custom_voice/spk362__0766.wav"></audio></div>
+            </div>
+          </article>
+          <article class="sample custom-sample custom-row" data-kind="custom" data-language="zh" data-speaker="Speaker 3" data-wer="" data-cer="" data-utmos="" data-filename="spk362__0886.wav">
+            <div class="sample-meta"><span>CV–12</span><span>Chinese</span></div>
+            <p class="transcript">学习哈佛毕业生的周末自我投资法。</p>
+            <div class="custom-model-grid">
+              <div class="model"><p class="model-name">LeanTTS 13m 4step</p><audio controls preload="none" aria-label="Speaker 3, Chinese Custom Voice sample 12" src="06_custom_voice/spk362__0886.wav"></audio></div>
+            </div>
+          </article>
+        </div>
+      </section>
+      <section class="speaker-group" data-speaker="Speaker 4" aria-labelledby="speaker-4">
+        <div class="speaker-heading">
+          <h3 id="speaker-4">Speaker 4</h3>
+        </div>
+        <div class="custom-samples">
+          <article class="sample custom-row reference-row" data-kind="reference" data-language="zh" data-speaker="Speaker 4" data-wer="" data-cer="" data-utmos="" data-filename="ankf__reference.wav">
+            <div class="row-type"><strong>Reference Audio</strong></div>
+            <div class="custom-model-grid">
+              <div class="model reference-model"><audio controls preload="none" aria-label="Speaker 4, reference audio" src="06_custom_voice/ankf__reference.wav"></audio></div>
+            </div>
+          </article>
+          <article class="sample custom-sample custom-row" data-kind="custom" data-language="en" data-speaker="Speaker 4" data-wer="" data-cer="" data-utmos="" data-filename="ankf__en_04.wav">
+            <div class="sample-meta"><span>CV–13</span><span>English</span></div>
+            <p class="transcript">Go to the park, and play with the dog.</p>
+            <div class="custom-model-grid">
+              <div class="model"><p class="model-name">LeanTTS 13m 4step</p><audio controls preload="none" aria-label="Speaker 4, English Custom Voice sample 13" src="06_custom_voice/ankf__en_04.wav"></audio></div>
+            </div>
+          </article>
+          <article class="sample custom-sample custom-row" data-kind="custom" data-language="en" data-speaker="Speaker 4" data-wer="" data-cer="" data-utmos="" data-filename="ankf__en_02.wav">
+            <div class="sample-meta"><span>CV–14</span><span>English</span></div>
+            <p class="transcript">I love you, I hate you, I am happy, I am sad, I am angry, I am surprised, I am disappointed, I am excited, I am nervous.</p>
+            <div class="custom-model-grid">
+              <div class="model"><p class="model-name">LeanTTS 13m 4step</p><audio controls preload="none" aria-label="Speaker 4, English Custom Voice sample 14" src="06_custom_voice/ankf__en_02.wav"></audio></div>
+            </div>
+          </article>
+          <article class="sample custom-sample custom-row" data-kind="custom" data-language="zh" data-speaker="Speaker 4" data-wer="" data-cer="" data-utmos="" data-filename="spk363__0766.wav">
+            <div class="sample-meta"><span>CV–15</span><span>Chinese</span></div>
+            <p class="transcript">在这充满神秘色彩的地方，经历过多次危险而勇敢的冒险。</p>
+            <div class="custom-model-grid">
+              <div class="model"><p class="model-name">LeanTTS 13m 4step</p><audio controls preload="none" aria-label="Speaker 4, Chinese Custom Voice sample 15" src="06_custom_voice/spk363__0766.wav"></audio></div>
+            </div>
+          </article>
+          <article class="sample custom-sample custom-row" data-kind="custom" data-language="zh" data-speaker="Speaker 4" data-wer="" data-cer="" data-utmos="" data-filename="spk363__0886.wav">
+            <div class="sample-meta"><span>CV–16</span><span>Chinese</span></div>
+            <p class="transcript">学习哈佛毕业生的周末自我投资法。</p>
+            <div class="custom-model-grid">
+              <div class="model"><p class="model-name">LeanTTS 13m 4step</p><audio controls preload="none" aria-label="Speaker 4, Chinese Custom Voice sample 16" src="06_custom_voice/spk363__0886.wav"></audio></div>
+            </div>
+          </article>
+        </div>
+      </section>
+      <section class="speaker-group" data-speaker="Speaker 5" aria-labelledby="speaker-5">
+        <div class="speaker-heading">
+          <h3 id="speaker-5">Speaker 5</h3>
+        </div>
+        <div class="custom-samples">
+          <article class="sample custom-row reference-row" data-kind="reference" data-language="zh" data-speaker="Speaker 5" data-wer="" data-cer="" data-utmos="" data-filename="jjbb__reference.wav">
+            <div class="row-type"><strong>Reference Audio</strong></div>
+            <div class="custom-model-grid">
+              <div class="model reference-model"><audio controls preload="none" aria-label="Speaker 5, reference audio" src="06_custom_voice/jjbb__reference.wav"></audio></div>
+            </div>
+          </article>
+          <article class="sample custom-sample custom-row" data-kind="custom" data-language="en" data-speaker="Speaker 5" data-wer="" data-cer="" data-utmos="" data-filename="jjbb__en_04.wav">
+            <div class="sample-meta"><span>CV–17</span><span>English</span></div>
+            <p class="transcript">Go to the park, and play with the dog.</p>
+            <div class="custom-model-grid">
+              <div class="model"><p class="model-name">LeanTTS 13m 4step</p><audio controls preload="none" aria-label="Speaker 5, English Custom Voice sample 17" src="06_custom_voice/jjbb__en_04.wav"></audio></div>
+            </div>
+          </article>
+          <article class="sample custom-sample custom-row" data-kind="custom" data-language="en" data-speaker="Speaker 5" data-wer="" data-cer="" data-utmos="" data-filename="jjbb__en_02.wav">
+            <div class="sample-meta"><span>CV–18</span><span>English</span></div>
+            <p class="transcript">I love you, I hate you, I am happy, I am sad, I am angry, I am surprised, I am disappointed, I am excited, I am nervous.</p>
+            <div class="custom-model-grid">
+              <div class="model"><p class="model-name">LeanTTS 13m 4step</p><audio controls preload="none" aria-label="Speaker 5, English Custom Voice sample 18" src="06_custom_voice/jjbb__en_02.wav"></audio></div>
+            </div>
+          </article>
+          <article class="sample custom-sample custom-row" data-kind="custom" data-language="zh" data-speaker="Speaker 5" data-wer="" data-cer="" data-utmos="" data-filename="spk364__0766.wav">
+            <div class="sample-meta"><span>CV–19</span><span>Chinese</span></div>
+            <p class="transcript">在这充满神秘色彩的地方，经历过多次危险而勇敢的冒险。</p>
+            <div class="custom-model-grid">
+              <div class="model"><p class="model-name">LeanTTS 13m 4step</p><audio controls preload="none" aria-label="Speaker 5, Chinese Custom Voice sample 19" src="06_custom_voice/spk364__0766.wav"></audio></div>
+            </div>
+          </article>
+          <article class="sample custom-sample custom-row" data-kind="custom" data-language="zh" data-speaker="Speaker 5" data-wer="" data-cer="" data-utmos="" data-filename="spk364__0886.wav">
+            <div class="sample-meta"><span>CV–20</span><span>Chinese</span></div>
+            <p class="transcript">学习哈佛毕业生的周末自我投资法。</p>
+            <div class="custom-model-grid">
+              <div class="model"><p class="model-name">LeanTTS 13m 4step</p><audio controls preload="none" aria-label="Speaker 5, Chinese Custom Voice sample 20" src="06_custom_voice/spk364__0886.wav"></audio></div>
+            </div>
+          </article>
+        </div>
+      </section>
+      <section class="speaker-group" data-speaker="Speaker 6" aria-labelledby="speaker-6">
+        <div class="speaker-heading">
+          <h3 id="speaker-6">Speaker 6</h3>
+        </div>
+        <div class="custom-samples">
+          <article class="sample custom-row reference-row" data-kind="reference" data-language="zh" data-speaker="Speaker 6" data-wer="" data-cer="" data-utmos="" data-filename="bbnzc__reference.wav">
+            <div class="row-type"><strong>Reference Audio</strong></div>
+            <div class="custom-model-grid">
+              <div class="model reference-model"><audio controls preload="none" aria-label="Speaker 6, reference audio" src="06_custom_voice/bbnzc__reference.wav"></audio></div>
+            </div>
+          </article>
+          <article class="sample custom-sample custom-row" data-kind="custom" data-language="en" data-speaker="Speaker 6" data-wer="" data-cer="" data-utmos="" data-filename="bbnzc__en_04.wav">
+            <div class="sample-meta"><span>CV–21</span><span>English</span></div>
+            <p class="transcript">Go to the park, and play with the dog.</p>
+            <div class="custom-model-grid">
+              <div class="model"><p class="model-name">LeanTTS 13m 4step</p><audio controls preload="none" aria-label="Speaker 6, English Custom Voice sample 21" src="06_custom_voice/bbnzc__en_04.wav"></audio></div>
+            </div>
+          </article>
+          <article class="sample custom-sample custom-row" data-kind="custom" data-language="en" data-speaker="Speaker 6" data-wer="" data-cer="" data-utmos="" data-filename="bbnzc__en_02.wav">
+            <div class="sample-meta"><span>CV–22</span><span>English</span></div>
+            <p class="transcript">I love you, I hate you, I am happy, I am sad, I am angry, I am surprised, I am disappointed, I am excited, I am nervous.</p>
+            <div class="custom-model-grid">
+              <div class="model"><p class="model-name">LeanTTS 13m 4step</p><audio controls preload="none" aria-label="Speaker 6, English Custom Voice sample 22" src="06_custom_voice/bbnzc__en_02.wav"></audio></div>
+            </div>
+          </article>
+          <article class="sample custom-sample custom-row" data-kind="custom" data-language="zh" data-speaker="Speaker 6" data-wer="" data-cer="" data-utmos="" data-filename="spk365__0766.wav">
+            <div class="sample-meta"><span>CV–23</span><span>Chinese</span></div>
+            <p class="transcript">在这充满神秘色彩的地方，经历过多次危险而勇敢的冒险。</p>
+            <div class="custom-model-grid">
+              <div class="model"><p class="model-name">LeanTTS 13m 4step</p><audio controls preload="none" aria-label="Speaker 6, Chinese Custom Voice sample 23" src="06_custom_voice/spk365__0766.wav"></audio></div>
+            </div>
+          </article>
+          <article class="sample custom-sample custom-row" data-kind="custom" data-language="zh" data-speaker="Speaker 6" data-wer="" data-cer="" data-utmos="" data-filename="spk365__0886.wav">
+            <div class="sample-meta"><span>CV–24</span><span>Chinese</span></div>
+            <p class="transcript">学习哈佛毕业生的周末自我投资法。</p>
+            <div class="custom-model-grid">
+              <div class="model"><p class="model-name">LeanTTS 13m 4step</p><audio controls preload="none" aria-label="Speaker 6, Chinese Custom Voice sample 24" src="06_custom_voice/spk365__0886.wav"></audio></div>
+            </div>
+          </article>
+        </div>
+      </section>
+      <section class="speaker-group" data-speaker="Speaker 7" aria-labelledby="speaker-7">
+        <div class="speaker-heading">
+          <h3 id="speaker-7">Speaker 7</h3>
+        </div>
+        <div class="custom-samples">
+          <article class="sample custom-row reference-row" data-kind="reference" data-language="zh" data-speaker="Speaker 7" data-wer="" data-cer="" data-utmos="" data-filename="xdbb__reference.wav">
+            <div class="row-type"><strong>Reference Audio</strong></div>
+            <div class="custom-model-grid">
+              <div class="model reference-model"><audio controls preload="none" aria-label="Speaker 7, reference audio" src="06_custom_voice/xdbb__reference.wav"></audio></div>
+            </div>
+          </article>
+          <article class="sample custom-sample custom-row" data-kind="custom" data-language="en" data-speaker="Speaker 7" data-wer="" data-cer="" data-utmos="" data-filename="xdbb__en_04.wav">
+            <div class="sample-meta"><span>CV–25</span><span>English</span></div>
+            <p class="transcript">Go to the park, and play with the dog.</p>
+            <div class="custom-model-grid">
+              <div class="model"><p class="model-name">LeanTTS 13m 4step</p><audio controls preload="none" aria-label="Speaker 7, English Custom Voice sample 25" src="06_custom_voice/xdbb__en_04.wav"></audio></div>
+            </div>
+          </article>
+          <article class="sample custom-sample custom-row" data-kind="custom" data-language="en" data-speaker="Speaker 7" data-wer="" data-cer="" data-utmos="" data-filename="xdbb__en_02.wav">
+            <div class="sample-meta"><span>CV–26</span><span>English</span></div>
+            <p class="transcript">I love you, I hate you, I am happy, I am sad, I am angry, I am surprised, I am disappointed, I am excited, I am nervous.</p>
+            <div class="custom-model-grid">
+              <div class="model"><p class="model-name">LeanTTS 13m 4step</p><audio controls preload="none" aria-label="Speaker 7, English Custom Voice sample 26" src="06_custom_voice/xdbb__en_02.wav"></audio></div>
+            </div>
+          </article>
+          <article class="sample custom-sample custom-row" data-kind="custom" data-language="zh" data-speaker="Speaker 7" data-wer="" data-cer="" data-utmos="" data-filename="spk366__0766.wav">
+            <div class="sample-meta"><span>CV–27</span><span>Chinese</span></div>
+            <p class="transcript">在这充满神秘色彩的地方，经历过多次危险而勇敢的冒险。</p>
+            <div class="custom-model-grid">
+              <div class="model"><p class="model-name">LeanTTS 13m 4step</p><audio controls preload="none" aria-label="Speaker 7, Chinese Custom Voice sample 27" src="06_custom_voice/spk366__0766.wav"></audio></div>
+            </div>
+          </article>
+          <article class="sample custom-sample custom-row" data-kind="custom" data-language="zh" data-speaker="Speaker 7" data-wer="" data-cer="" data-utmos="" data-filename="spk366__0886.wav">
+            <div class="sample-meta"><span>CV–28</span><span>Chinese</span></div>
+            <p class="transcript">学习哈佛毕业生的周末自我投资法。</p>
+            <div class="custom-model-grid">
+              <div class="model"><p class="model-name">LeanTTS 13m 4step</p><audio controls preload="none" aria-label="Speaker 7, Chinese Custom Voice sample 28" src="06_custom_voice/spk366__0886.wav"></audio></div>
+            </div>
+          </article>
+        </div>
+      </section>
+      <section class="speaker-group" data-speaker="Speaker 8" aria-labelledby="speaker-8">
+        <div class="speaker-heading">
+          <h3 id="speaker-8">Speaker 8</h3>
+        </div>
+        <div class="custom-samples">
+          <article class="sample custom-row reference-row" data-kind="reference" data-language="zh" data-speaker="Speaker 8" data-wer="" data-cer="" data-utmos="" data-filename="jnns__reference.wav">
+            <div class="row-type"><strong>Reference Audio</strong></div>
+            <div class="custom-model-grid">
+              <div class="model reference-model"><audio controls preload="none" aria-label="Speaker 8, reference audio" src="06_custom_voice/jnns__reference.wav"></audio></div>
+            </div>
+          </article>
+          <article class="sample custom-sample custom-row" data-kind="custom" data-language="en" data-speaker="Speaker 8" data-wer="" data-cer="" data-utmos="" data-filename="jnns__en_04.wav">
+            <div class="sample-meta"><span>CV–29</span><span>English</span></div>
+            <p class="transcript">Go to the park, and play with the dog.</p>
+            <div class="custom-model-grid">
+              <div class="model"><p class="model-name">LeanTTS 13m 4step</p><audio controls preload="none" aria-label="Speaker 8, English Custom Voice sample 29" src="06_custom_voice/jnns__en_04.wav"></audio></div>
+            </div>
+          </article>
+          <article class="sample custom-sample custom-row" data-kind="custom" data-language="en" data-speaker="Speaker 8" data-wer="" data-cer="" data-utmos="" data-filename="jnns__en_02.wav">
+            <div class="sample-meta"><span>CV–30</span><span>English</span></div>
+            <p class="transcript">I love you, I hate you, I am happy, I am sad, I am angry, I am surprised, I am disappointed, I am excited, I am nervous.</p>
+            <div class="custom-model-grid">
+              <div class="model"><p class="model-name">LeanTTS 13m 4step</p><audio controls preload="none" aria-label="Speaker 8, English Custom Voice sample 30" src="06_custom_voice/jnns__en_02.wav"></audio></div>
+            </div>
+          </article>
+          <article class="sample custom-sample custom-row" data-kind="custom" data-language="zh" data-speaker="Speaker 8" data-wer="" data-cer="" data-utmos="" data-filename="spk367__0766.wav">
+            <div class="sample-meta"><span>CV–31</span><span>Chinese</span></div>
+            <p class="transcript">在这充满神秘色彩的地方，经历过多次危险而勇敢的冒险。</p>
+            <div class="custom-model-grid">
+              <div class="model"><p class="model-name">LeanTTS 13m 4step</p><audio controls preload="none" aria-label="Speaker 8, Chinese Custom Voice sample 31" src="06_custom_voice/spk367__0766.wav"></audio></div>
+            </div>
+          </article>
+          <article class="sample custom-sample custom-row" data-kind="custom" data-language="zh" data-speaker="Speaker 8" data-wer="" data-cer="" data-utmos="" data-filename="spk367__0886.wav">
+            <div class="sample-meta"><span>CV–32</span><span>Chinese</span></div>
+            <p class="transcript">学习哈佛毕业生的周末自我投资法。</p>
+            <div class="custom-model-grid">
+              <div class="model"><p class="model-name">LeanTTS 13m 4step</p><audio controls preload="none" aria-label="Speaker 8, Chinese Custom Voice sample 32" src="06_custom_voice/spk367__0886.wav"></audio></div>
+            </div>
+          </article>
+        </div>
+      </section>
+    </section>
+  </main>
+
+</body>
+</html>
