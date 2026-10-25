@@ -1,22 +1,59 @@
-# Demo 网站压缩包说明
+# LeanTTS Audio Demo
 
-## 文件
+Audio demonstrations for **LeanTTS: Efficient Full-Stack Bilingual TTS for Zero-Shot Cloning and Voice Customization**.
 
-- `LeanTTS_demo_website.zip`：可直接解压部署的 Demo 网站压缩包。
-- 压缩包顶层目录为 `LeanTTS_demo/`。
-- 包内只包含当前 `index.html` 实际引用的 128 条音频、网页文件和一份说明，不包含测试脚本、实验记录、历史指标及未被网页引用的旧音频。
+This repository contains a static, browser-based listening demo for comparing LeanTTS model variants on English and Chinese speech synthesis. No installation or build step is required.
 
-## 解压与本地预览
+## Demo Contents
+
+### Zero-Shot Voice Cloning
+
+- 8 English samples and 8 Chinese samples from the SeedTTS evaluation set
+- A reference recording and transcript for each sample
+- Side-by-side outputs from:
+  - LeanTTS 25M
+  - LeanTTS 13M
+  - LeanTTS 13M 4-step
+
+### Custom Voice
+
+- Demonstrations from 8 speakers
+- English and Chinese synthesis examples
+- A reference recording for each speaker
+- LeanTTS 13M 4-step generation results
+
+## View the Demo Locally
+
+Clone the repository and start a local HTTP server:
 
 ```bash
-cd /nfs/dataset-ofs-diar/luyuheng/lyh/edge/eval/zipvoice/top30_5models_comparison
-unzip LeanTTS_demo_website.zip
-python3 -m http.server 8765 --directory LeanTTS_demo
+git clone https://github.com/notlu/leantts.git
+cd leantts
+python3 -m http.server 8765
 ```
 
-浏览器访问 `http://127.0.0.1:8765/index.html` 即可预览。
+Then open [http://localhost:8765](http://localhost:8765) in a browser.
 
-## 部署
+You can also open `index.html` directly, although a local HTTP server is recommended for more consistent audio playback across browsers.
 
-将压缩包中的 `LeanTTS_demo/` 目录内容上传到 GitHub 仓库根目录，然后启用 GitHub Pages 即可。`index.html` 使用相对路径加载音频，不依赖服务器端程序。
+## Repository Structure
+
+```text
+.
+├── index.html                 # Demo interface
+├── 01_teacher25m/             # LeanTTS 25M outputs
+├── 02_teacher13m/             # LeanTTS 13M outputs
+├── 04_fixed4_update10k16k/    # LeanTTS 13M 4-step outputs
+├── 06_custom_voice/           # Custom Voice references and outputs
+└── 07_seedtts_references/     # Zero-shot reference recordings
+```
+
+All audio is loaded through relative paths, so the demo can be hosted as a static website, including with GitHub Pages.
+
+## Authors
+
+**Yuheng Lu et al.**
+
+1. Tianjin University, Tianjin, China
+2. Didichuxing Co. Ltd., Beijing, China
 
